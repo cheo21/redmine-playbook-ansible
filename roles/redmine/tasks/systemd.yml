@@ -1,0 +1,21 @@
+---
+- name: Habilitar servicio de Redmine
+  block:
+    - name: Crear archivo de servicio de Redmine
+      ansible.builtin.template:
+        src: redmine.service.j2
+        dest: /etc/systemd/system/redmine.service
+        mode: '0644'
+      become: true
+
+    - name: Recargar configuración de systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+      become: true
+
+    - name: Habilitar y arrancar el servicio de Redmine
+      ansible.builtin.systemd:
+        name: redmine
+        enabled: true
+        state: started
+      become: true

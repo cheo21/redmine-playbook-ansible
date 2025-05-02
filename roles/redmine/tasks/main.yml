@@ -1,0 +1,10 @@
+---
+
+- name: Cargar variables específicas del sistema
+  ansible.builtin.include_vars: "redmine.yml"
+
+- name: Instalar y configurar Redmine
+  ansible.builtin.import_tasks: redmine.yml
+
+- name: Habilitar y configurar el servicio de Redmine
+  ansible.builtin.import_tasks: "systemd.yml"

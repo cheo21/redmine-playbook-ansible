@@ -1,0 +1,106 @@
+---
+- name: Instalar y configurar Ruby con RVM
+  block:
+    - name: Install gpg key
+      ansible.builtin.shell: >
+        gpg --keyserver keyserver.ubuntu.com --recv-keys
+        409B6B1796C275462A1703113804BB82D39DC0E3
+        7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+      args:
+        creates: /root/.gnupg
+    - name: Instalar dependencias
+      ansible.builtin.apt:
+        name: "{{ rvm_dependencies }}"
+        state: present
+        update_cache: yes
+      become: true
+    - name: Instalar RVM (modo sistema para todos los usuarios)
+      ansible.builtin.shell: |
+        curl -sSL https://get.rvm.io | bash -s stable --auto-dotfiles --system 
+      args:
+        creates: /usr/local/rvm/bin/rvm
+        executable: /bin/bash
+      become: true
+      environment:
+        USER: root
+        HOME: /root
+    - name: Habilitar RVM globalmente
+      copy:
+        dest: /etc/profile.d/rvm.sh
+        content: 'source /usr/local/rvm/scripts/rvm'
+        mode: '0755'
+      become: true
+    - name: Instalar Ruby con RVM
+      shell: |
+        source /etc/profile.d/rvm.sh && rvm install {{ ruby_version }} && rvm use {{ ruby_version }} --default
+      args:
+        executable: /bin/bash
+      become: true
+
+- name: Instalar y configurar Redmine
+  block:
+    - name: Descargar Redmine
+      ansible.builtin.get_url:
+        url: "https://www.redmine.org/releases/redmine-{{ redmine_version }}.zip"
+        dest: /tmp/redmine-{{ redmine_version }}.zip
+        mode: 0644
+      become: true
+
+    - name: Descomprimir Redmine
+      ansible.builtin.unarchive:
+        src: /tmp/redmine-{{ redmine_version }}.zip
+        dest: /opt/
+        remote_src: yes
+        mode: 0755
+        
+
+    - name: Copia Template de Configuración de DB
+      ansible.builtin.template:
+        src: database.yml.j2
+        dest: /opt/redmine-{{ redmine_version }}/config/database.yml
+        mode: 0644
+      become: true
+
+    - name: Copiar Template de Gemfile
+      ansible.builtin.template:
+        src: Gemfile.j2
+        dest: /opt/redmine-{{ redmine_version }}/Gemfile
+        mode: 0644
+      become: true
+
+    - name: Instalar gemas desde el Gemfile
+      ansible.builtin.shell: |
+        source /etc/profile.d/rvm.sh && \
+        gem install bundler && \
+        bundle install
+      args:
+        executable: /bin/bash
+        chdir: /opt/redmine-{{ redmine_version }}
+      become: true
+      
+      
+
+    - name: Instalar dependencias y configurar Redmine
+      ansible.builtin.shell: |
+        source /etc/profile.d/rvm.sh && \
+        rvm {{ ruby_version }} do bundle exec rake generate_secret_token && \
+        RAILS_ENV=production rvm {{ ruby_version }} do bundle exec rake db:migrate && \
+        RAILS_ENV=production rvm {{ ruby_version }} do bundle exec rake redmine:load_default_data
+      args:
+        executable: /bin/bash
+        chdir: /opt/redmine-{{ redmine_version }}
+      become: true
+      
+    - name: Levantar el servidor Puma
+      ansible.builtin.shell: |
+        source /etc/profile.d/rvm.sh && RAILS_ENV=production bundle exec rails server
+      args:
+        executable: /bin/bash
+        chdir: /opt/redmine-{{ redmine_version }}
+      become: true
+      
+
+
+
+
+

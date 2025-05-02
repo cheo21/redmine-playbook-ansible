@@ -1,0 +1,16 @@
+[Unit]
+Description=Servicio de redmine
+After=network.target
+
+
+[Service]
+Type=simple
+User={{ username }}
+Group={{ username }}
+WorkingDirectory=/opt/redmine-{{ redmine_version}}
+Environment="RAILS_ENV=production"
+ExecStart=/bin/bash -lc 'bundle exec rails server'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
