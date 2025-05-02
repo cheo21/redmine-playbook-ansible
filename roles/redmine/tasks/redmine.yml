@@ -1,6 +1,13 @@
 ---
 - name: Instalar y configurar Ruby con RVM
   block:
+    - name: Instalar dependencias
+      ansible.builtin.apt:
+        name: "{{ rvm_dependencies }}"
+        state: present
+        update_cache: yes
+      become: true
+
     - name: Install gpg key
       ansible.builtin.shell: >
         gpg --keyserver keyserver.ubuntu.com --recv-keys
@@ -8,34 +15,31 @@
         7D2BAF1CF37B13E2069D6956105BD0E739499BDB
       args:
         creates: /root/.gnupg
-    - name: Instalar dependencias
-      ansible.builtin.apt:
-        name: "{{ rvm_dependencies }}"
-        state: present
-        update_cache: yes
-      become: true
-    - name: Instalar RVM (modo sistema para todos los usuarios)
+   
+    - name: Instalar RVM (solo para el usuario)
       ansible.builtin.shell: |
-        curl -sSL https://get.rvm.io | bash -s stable --auto-dotfiles --system 
+        curl -sSL https://get.rvm.io | bash -s stable --auto-dotfiles
       args:
-        creates: /usr/local/rvm/bin/rvm
+        creates: "{{ ansible_env.HOME }}/.rvm/bin/rvm"
         executable: /bin/bash
-      become: true
-      environment:
-        USER: root
-        HOME: /root
-    - name: Habilitar RVM globalmente
-      copy:
-        dest: /etc/profile.d/rvm.sh
-        content: 'source /usr/local/rvm/scripts/rvm'
-        mode: '0755'
-      become: true
+    - name: Ensure the rvm group exists
+      ansible.builtin.group:
+        name: rvm
+        state: present
+
+    - name: Add vagrant user to rvm group
+      ansible.builtin.user:
+        name: '{{ username }}'
+        groups: rvm
+        append: yes
     - name: Instalar Ruby con RVM
       shell: |
-        source /etc/profile.d/rvm.sh && rvm install {{ ruby_version }} && rvm use {{ ruby_version }} --default
+        source /etc/profile.d/rvm.sh && \
+        rvm install {{ ruby_version }} && \
+        rvm use {{ ruby_version }} --default
       args:
         executable: /bin/bash
-      become: true
+
 
 - name: Instalar y configurar Redmine
   block:
@@ -44,7 +48,6 @@
         url: "https://www.redmine.org/releases/redmine-{{ redmine_version }}.zip"
         dest: /tmp/redmine-{{ redmine_version }}.zip
         mode: 0644
-      become: true
 
     - name: Descomprimir Redmine
       ansible.builtin.unarchive:
@@ -76,11 +79,8 @@
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
-      become: true
-      
-      
 
-    - name: Instalar dependencias y configurar Redmine
+    - name: Levantar redmine (db, migraciones y datos por defecto)
       ansible.builtin.shell: |
         source /etc/profile.d/rvm.sh && \
         rvm {{ ruby_version }} do bundle exec rake generate_secret_token && \
@@ -89,7 +89,7 @@
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
-      become: true
+
       
     - name: Levantar el servidor Puma
       ansible.builtin.shell: |
@@ -97,7 +97,7 @@
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
-      become: true
+
       
 
 
