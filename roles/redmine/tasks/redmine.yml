@@ -34,35 +34,26 @@
         owner: "{{ ansible_env.USER }}"
       become: true
     
-    - name: Habilitar ruby en el directorio de redmine
-      ansible.builtin.command: |
-        asdf set ruby {{ ruby_version }}
-      args:
-        chdir: /opt/redmine-{{ redmine_version }}
 
     - name: Instalar gemas desde el Gemfile
       ansible.builtin.shell: |
-        . "$HOME/.asdf/asdf.sh" && \
-        gem install bundler && \
+        export PATH="$HOME/.rbenv/bin:$PATH"
+        eval "$(~/.rbenv/bin/rbenv init - bash)"
+        gem install bundler
         bundle install
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
+      environment:
+
 
     - name: Levantar redmine (db, migraciones y datos por defecto)
       ansible.builtin.shell: |
-        . "$HOME/.asdf/asdf.sh" && \
-        bundle exec rake generate_secret_token && \
-        bundle exec rake db:migrate && \
-        bundle exec rake redmine:load_default_data
-      args:
-        executable: /bin/bash
-        chdir: /opt/redmine-{{ redmine_version }}
-
-      
-    - name: Levantar el servidor Puma
-      ansible.builtin.shell: |
-        . "$HOME/.asdf/asdf.sh" && RAILS_ENV=production bundle exec rails server
+        export PATH="$HOME/.rbenv/bin:$PATH"
+        eval "$(~/.rbenv/bin/rbenv init - bash)"
+        bundle exec rake generate_secret_token &&
+        RAILS_ENV=production bundle exec rake db:migrate &&
+        RAILS_ENV=production REDMINE_LANG=es bundle exec rake redmine:load_default_data
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}

@@ -3,11 +3,11 @@
 - name: Cargar variables específicas del sistema
   ansible.builtin.include_vars: "redmine.yml"
 
-- name: Instalar asdf y Ruby
-  ansible.builtin.import_tasks: asdf-ruby.yml
+- name: Instalar rvm y Ruby
+  ansible.builtin.import_tasks: rvm-ruby.yml
 
 - name: Instalar y configurar Redmine
   ansible.builtin.import_tasks: redmine.yml
 
-# - name: Habilitar y configurar el servicio de Redmine
-#   ansible.builtin.import_tasks: "systemd.yml"
+- name: Habilitar y configurar el servicio de Redmine
+  ansible.builtin.import_tasks: "systemd.yml"
