@@ -1,45 +1,4 @@
 ---
-- name: Instalar y configurar Ruby con RVM
-  block:
-    - name: Instalar dependencias
-      ansible.builtin.apt:
-        name: "{{ rvm_dependencies }}"
-        state: present
-        update_cache: yes
-      become: true
-
-    - name: Install gpg key
-      ansible.builtin.shell: >
-        gpg --keyserver keyserver.ubuntu.com --recv-keys
-        409B6B1796C275462A1703113804BB82D39DC0E3
-        7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-      args:
-        creates: /root/.gnupg
-   
-    - name: Instalar RVM (solo para el usuario)
-      ansible.builtin.shell: |
-        curl -sSL https://get.rvm.io | bash -s stable --auto-dotfiles
-      args:
-        creates: "{{ ansible_env.HOME }}/.rvm/bin/rvm"
-        executable: /bin/bash
-    - name: Ensure the rvm group exists
-      ansible.builtin.group:
-        name: rvm
-        state: present
-
-    - name: Add vagrant user to rvm group
-      ansible.builtin.user:
-        name: '{{ username }}'
-        groups: rvm
-        append: yes
-    - name: Instalar Ruby con RVM
-      shell: |
-        source /etc/profile.d/rvm.sh && \
-        rvm install {{ ruby_version }} && \
-        rvm use {{ ruby_version }} --default
-      args:
-        executable: /bin/bash
-
 
 - name: Instalar y configurar Redmine
   block:
@@ -47,14 +6,16 @@
       ansible.builtin.get_url:
         url: "https://www.redmine.org/releases/redmine-{{ redmine_version }}.zip"
         dest: /tmp/redmine-{{ redmine_version }}.zip
-        mode: 0644
+        mode: 0777
 
     - name: Descomprimir Redmine
       ansible.builtin.unarchive:
         src: /tmp/redmine-{{ redmine_version }}.zip
         dest: /opt/
         remote_src: yes
+        owner: "{{ ansible_env.USER }}"
         mode: 0755
+      become: true
         
 
     - name: Copia Template de Configuración de DB
@@ -62,6 +23,7 @@
         src: database.yml.j2
         dest: /opt/redmine-{{ redmine_version }}/config/database.yml
         mode: 0644
+        owner: "{{ ansible_env.USER }}"
       become: true
 
     - name: Copiar Template de Gemfile
@@ -69,11 +31,18 @@
         src: Gemfile.j2
         dest: /opt/redmine-{{ redmine_version }}/Gemfile
         mode: 0644
+        owner: "{{ ansible_env.USER }}"
       become: true
+    
+    - name: Habilitar ruby en el directorio de redmine
+      ansible.builtin.command: |
+        asdf set ruby {{ ruby_version }}
+      args:
+        chdir: /opt/redmine-{{ redmine_version }}
 
     - name: Instalar gemas desde el Gemfile
       ansible.builtin.shell: |
-        source /etc/profile.d/rvm.sh && \
+        . "$HOME/.asdf/asdf.sh" && \
         gem install bundler && \
         bundle install
       args:
@@ -82,10 +51,10 @@
 
     - name: Levantar redmine (db, migraciones y datos por defecto)
       ansible.builtin.shell: |
-        source /etc/profile.d/rvm.sh && \
-        rvm {{ ruby_version }} do bundle exec rake generate_secret_token && \
-        RAILS_ENV=production rvm {{ ruby_version }} do bundle exec rake db:migrate && \
-        RAILS_ENV=production rvm {{ ruby_version }} do bundle exec rake redmine:load_default_data
+        . "$HOME/.asdf/asdf.sh" && \
+        bundle exec rake generate_secret_token && \
+        bundle exec rake db:migrate && \
+        bundle exec rake redmine:load_default_data
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
@@ -93,14 +62,7 @@
       
     - name: Levantar el servidor Puma
       ansible.builtin.shell: |
-        source /etc/profile.d/rvm.sh && RAILS_ENV=production bundle exec rails server
+        . "$HOME/.asdf/asdf.sh" && RAILS_ENV=production bundle exec rails server
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
-
-      
-
-
-
-
-

@@ -1,12 +1,25 @@
 redmine_version: 6.0.5
-ruby_version: 3.2.0
+asdf_version: v0.16.0
+ruby_version: 3.0.6
 bundler_version: 1.12.0
 puma_version: 5.0.0
 rails_version: 6.1.7.10
-rvm_dependencies:
+asdf_dependencies:
   - curl
   - gnupg
   - unzip
+  - build-essential
+  - libmysqlclient-dev
+  - mysql-server
+  - libonig-dev
+  - tk-dev
+  - libgdbm-dev
+  - libyaml-dev
+  - libffi-dev 
+  - libssl-dev
+  - libreadline6-dev
+  - zlib1g-dev
+  - rustc
   - bash
   - build-essential
   - libssl-dev
@@ -17,6 +30,7 @@ rvm_dependencies:
   - libffi-dev
   - git
   - autoconf
+  - libmysqlclient-dev
   - bison
   - libyaml-dev
   - libgdbm-dev
