@@ -10,4 +10,6 @@
   ansible.builtin.import_tasks: redmine.yml
 
 - name: Habilitar y configurar el servicio de Redmine
-  ansible.builtin.import_tasks: "systemd.yml"
+  ansible.builtin.include_tasks: "systemd.yml"
+  when: ansible_virtualization_type is defined and ansible_virtualization_type != "docker"
+

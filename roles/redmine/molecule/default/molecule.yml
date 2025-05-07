@@ -1,0 +1,17 @@
+---
+dependency:
+  name: galaxy
+  options:
+    role-name: redmine
+driver:
+  name: docker
+
+
+platforms:
+  - name: instance-ubuntu
+    image: geerlingguy/docker-ubuntu2404-ansible
+provisioner:
+  name: ansible
+
+verifier:
+  name: ansible

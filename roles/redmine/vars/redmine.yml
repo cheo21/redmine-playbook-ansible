@@ -1,3 +1,4 @@
+---
 redmine_version: 5.0.11
 asdf_version: v0.16.0
 ruby_version: 3.2.1
@@ -13,7 +14,7 @@ rvm_dependencies:
   - tk-dev
   - libgdbm-dev
   - libyaml-dev
-  - libffi-dev 
+  - libffi-dev
   - libssl-dev
   - libreadline6-dev
   - zlib1g-dev
@@ -34,5 +35,3 @@ rvm_dependencies:
   - libgdbm-dev
   - libncurses5-dev
   - libncursesw5-dev
-
-

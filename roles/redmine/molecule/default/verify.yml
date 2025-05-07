@@ -1,0 +1,40 @@
+---
+- name: Verificar instalación de Ruby con rbenv en /opt/redmine y puerto 3000
+  hosts: redmine_server
+  tasks:
+
+    - name: Verificar si Ruby está instalado correctamente en /opt/redmine
+      ansible.builtin.shell: |
+        export PATH="$HOME/.rbenv/bin:$PATH"
+        eval "$(~/.rbenv/bin/rbenv init - bash)"
+        ruby -v
+      args:
+        chdir: /opt/redmine
+      register: ruby_check
+      changed_when: false
+
+    - name: Mostrar resultado de la verificación de Ruby
+      ansible.builtin.debug:
+        var: ruby_check.stdout
+
+    - name: Falla si Ruby no está disponible en /opt/redmine usando rbenv
+      ansible.builtin.fail:
+        msg: "Ruby no está correctamente instalado o accesible vía rbenv en /opt/redmine"
+      when: ruby_check.rc != 0
+
+    - name: Verificar si el puerto 3000 está en escucha
+      ansible.builtin.shell: |
+        set -o pipefail
+        ss -tuln | grep ':3000'
+      register: port_check
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar estado del puerto 3000
+      ansible.builtin.debug:
+        var: port_check.stdout
+
+    - name: Falla si el puerto 3000 no está en escucha
+      ansible.builtin.fail:
+        msg: "El puerto 3000 no está en escucha"
+      when: port_check.stdout == ""

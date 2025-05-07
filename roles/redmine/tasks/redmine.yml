@@ -1,28 +1,39 @@
 ---
-
 - name: Instalar y configurar Redmine
   block:
+
+    - name: Verificar si ya se descargó Redmine
+      ansible.builtin.stat:
+        path: /tmp/redmine-{{ redmine_version }}.zip
+      register: redmine_zip
+
     - name: Descargar Redmine
       ansible.builtin.get_url:
         url: "https://www.redmine.org/releases/redmine-{{ redmine_version }}.zip"
         dest: /tmp/redmine-{{ redmine_version }}.zip
-        mode: 0777
+        mode: '0777'
+      when: not redmine_zip.stat.exists
+
+    - name: Verificar si ya está descomprimido
+      ansible.builtin.stat:
+        path: /opt/redmine-{{ redmine_version }}
+      register: redmine_dir
 
     - name: Descomprimir Redmine
       ansible.builtin.unarchive:
         src: /tmp/redmine-{{ redmine_version }}.zip
         dest: /opt/
-        remote_src: yes
+        remote_src: true
         owner: "{{ ansible_env.USER }}"
-        mode: 0755
+        mode: '0755'
       become: true
-        
+      when: not redmine_dir.stat.exists
 
-    - name: Copia Template de Configuración de DB
+    - name: Copiar Template de Configuración de DB
       ansible.builtin.template:
         src: database.yml.j2
         dest: /opt/redmine-{{ redmine_version }}/config/database.yml
-        mode: 0644
+        mode: '0644'
         owner: "{{ ansible_env.USER }}"
       become: true
 
@@ -30,30 +41,41 @@
       ansible.builtin.template:
         src: Gemfile.j2
         dest: /opt/redmine-{{ redmine_version }}/Gemfile
-        mode: 0644
+        mode: '0644'
         owner: "{{ ansible_env.USER }}"
       become: true
-    
+
+    - name: Verificar si ya se han instalado las gemas
+      ansible.builtin.stat:
+        path: /opt/redmine-{{ redmine_version }}/vendor/bundle
+      register: gems_installed
 
     - name: Instalar gemas desde el Gemfile
       ansible.builtin.shell: |
         export PATH="$HOME/.rbenv/bin:$PATH"
         eval "$(~/.rbenv/bin/rbenv init - bash)"
         gem install bundler
-        bundle install
+        bundle install --path vendor/bundle
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
-      environment:
+      when: not gems_installed.stat.exists
+      changed_when: true
 
+    - name: Verificar si ya se ha generado el secret_token
+      ansible.builtin.stat:
+        path: /opt/redmine-{{ redmine_version }}/config/initializers/secret_token.rb
+      register: secret_token
 
     - name: Levantar redmine (db, migraciones y datos por defecto)
       ansible.builtin.shell: |
         export PATH="$HOME/.rbenv/bin:$PATH"
         eval "$(~/.rbenv/bin/rbenv init - bash)"
-        bundle exec rake generate_secret_token &&
-        RAILS_ENV=production bundle exec rake db:migrate &&
+        bundle exec rake generate_secret_token
+        RAILS_ENV=production bundle exec rake db:migrate
         RAILS_ENV=production REDMINE_LANG=es bundle exec rake redmine:load_default_data
       args:
         executable: /bin/bash
         chdir: /opt/redmine-{{ redmine_version }}
+      when: not secret_token.stat.exists
+      changed_when: true

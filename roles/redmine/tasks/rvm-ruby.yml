@@ -1,3 +1,4 @@
+---
 - name: Instalar y configurar Ruby con rbenv
   block:
 
@@ -5,20 +6,20 @@
       ansible.builtin.apt:
         name: '{{ rvm_dependencies }}'
         state: present
-        update_cache: yes
+        update_cache: true
       become: true
 
     - name: Clonar rbenv
       ansible.builtin.git:
         repo: 'https://github.com/rbenv/rbenv.git'
         dest: "{{ ansible_env.HOME }}/.rbenv"
-        update: no
+        update: false
 
     - name: Clonar plugin ruby-build
       ansible.builtin.git:
         repo: 'https://github.com/rbenv/ruby-build.git'
         dest: "{{ ansible_env.HOME }}/.rbenv/plugins/ruby-build"
-        update: no
+        update: false
 
     - name: Agregar rbenv al PATH en .bashrc
       ansible.builtin.lineinfile:
@@ -41,5 +42,6 @@
         rbenv rehash
       args:
         executable: /bin/bash
+        creates: "{{ ansible_env.HOME }}/.rbenv/versions/{{ ruby_version }}"
       environment:
         HOME: "{{ ansible_env.HOME }}"
