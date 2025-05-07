@@ -4,8 +4,8 @@ Este playbook de Ansible automatiza la instalación y configuración de Redmine 
 
 ## Requisitos
 
-- Ansible instalado en el host de control.
-- Acceso SSH al servidor objetivo con privilegios de `sudo`.
+
+- Acceso a usuario con privilegios de `sudo`.
 - Sistema operativo destino: **Ubuntu 22.04 (Jammy Jellyfish)** o **Ubuntu 24.04**.
 - Conexión a internet para descargar Redmine y dependencias.
 
