@@ -1,9 +1,12 @@
-- name: Configurar Redmine, MySQL y Nginx 
+---
+- name: Configurar Redmine, MySQL y Nginx
   hosts: all
   gather_facts: true
   vars_files:
     - ../vars/globales.yml
   roles:
-  - role: geerlingguy.mysql
-    become: true
-  - role: roles/redmine
+    - role: geerlingguy.mysql
+      become: true
+    - role: redmine
+    - role: geerlingguy.nginx
+      become: true

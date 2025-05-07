@@ -1,6 +1,8 @@
+---
 database_host: localhost
 username: vagrant
 password: vagrant
+redmine_version: 5.0.11
 mysql_root_password: root
 mysql_databases:
   - name: redmine
