@@ -37,6 +37,23 @@
         owner: "{{ ansible_env.USER }}"
       become: true
 
+    - name: Copiar Template de Gemfile.local
+      ansible.builtin.template:
+        src: Gemfile.local.j2
+        dest: /opt/redmine-{{ redmine_version }}/Gemfile.local
+        mode: '0644'
+        owner: "{{ ansible_env.USER }}"
+      become: true
+
+    - name: Add OpenTelemetry.rb
+      ansible.builtin.copy:
+        src: opentelemetry.rb
+        dest: /opt/redmine-{{ redmine_version }}/config/initializers/opentelemetry.rb
+        mode: '0644'
+        owner: "{{ ansible_env.USER }}"
+      become: true
+
+
     - name: Copiar Template de Gemfile
       ansible.builtin.template:
         src: Gemfile.j2

@@ -9,6 +9,8 @@ User={{ username }}
 Group={{ username }}
 WorkingDirectory=/opt/redmine-{{ redmine_version}}
 Environment="RAILS_ENV=production"
+Environment="OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318"
+Environment="OTEL_RESOURCE_ATTRIBUTES=deployment.environment=production"
 ExecStart=/bin/bash -lc 'export PATH="$HOME/.rbenv/bin:$PATH"; eval "$(rbenv init - bash)"; bundle exec rails server'
 Restart=always
 

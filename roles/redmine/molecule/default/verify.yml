@@ -1,7 +1,12 @@
 ---
 - name: Verificar instalación de Ruby con rbenv en /opt/redmine y puerto 3000
   hosts: redmine_server
+  become: true
   tasks:
+    - name: Lanzar servidor Rails
+      command: bash -c "cd /opt/redmine-{{ redmine_version }} && bundle exec rails server &"
+      async: 300
+      poll: 0
 
     - name: Verificar si Ruby está instalado correctamente en /opt/redmine
       ansible.builtin.shell: |

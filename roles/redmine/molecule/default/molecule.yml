@@ -10,6 +10,9 @@ driver:
 platforms:
   - name: instance-ubuntu
     image: geerlingguy/docker-ubuntu2404-ansible
+    published_ports:
+      - "3000:3000"
+    pre_build_image: true
 provisioner:
   name: ansible
 
